@@ -1,7 +1,8 @@
 # Karty lojalnościowe dla Home Assistant
 
 Wszystkie karty sklepowe (Biedronka, Lidl, Rossmann…) w jednym widoku Home Assistanta.
-Pokazuje kod kreskowy albo QR do zeskanowania przy kasie, sam dobiera logo sklepu,
+Pokazuje kod kreskowy albo QR do zeskanowania przy kasie, a karty z kodem zmieniającym się co chwilę
+(np. Żappka, Lidl Plus) otwierają aplikację sklepu. Sam dobiera logo sklepu,
 a karty widzą i dodają wszyscy domownicy.
 
 ---

@@ -1,6 +1,6 @@
 """Logo sklepów dla kart lojalnościowych (widok Karty).
 
-Dla każdej karty (frontend user data "karty_lojalnosciowe" wszystkich użytkowników) szuka logo:
+Dla każdej karty (wspólny magazyn .storage/karty oraz stare dane frontendu użytkowników) szuka logo:
   1. Wikidata (właściwość P154 "logo" marki, aktualna wersja) -> miniatura 400 px z Wikimedia Commons,
   2. strona sklepu (domena z karty lub z www/karty/sklepy.json) -> największa ikona (apple-touch-icon / SVG),
   3. ikona z Google (tylko jeśli >= 64 px).
@@ -118,8 +118,12 @@ def cards():
     shops = json.load(open(os.path.join(BASE, "www", "karty", "sklepy.json"), encoding="utf-8"))
     aliases = shops.pop("_alias", {})
     out = {}
-    for path in glob.glob(os.path.join(BASE, ".storage", "frontend.user_data_*")):
-        try: cs = (json.load(open(path, encoding="utf-8"))["data"].get("karty_lojalnosciowe") or {}).get("cards", [])
+    # wspólny magazyn (custom_components/karty) + stare karty z danych frontendu użytkowników
+    sources = [(os.path.join(BASE, ".storage", "karty"), lambda d: d.get("cards"))]
+    sources += [(p, lambda d: (d.get("karty_lojalnosciowe") or {}).get("cards"))
+                for p in glob.glob(os.path.join(BASE, ".storage", "frontend.user_data_*"))]
+    for path, pick in sources:
+        try: cs = pick(json.load(open(path, encoding="utf-8"))["data"]) or []
         except Exception: continue
         for c in cs:
             brand_name = re.split(r"\s+[-–—]\s*|\s*[-–—]\s+|\s*\(", (c.get("name") or "").strip())[0]  # "Makro – firmowa" -> "Makro"

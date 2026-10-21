@@ -25,62 +25,6 @@ cards:
     custom_fields:
       karty: |-
         [[[
-        const KT = {};
-        KT.sha1 = bytes => {
-          const rotl = (x, n) => (x << n) | (x >>> (32 - n));
-          const ml = bytes.length * 8;
-          const withPad = new Uint8Array(((bytes.length + 9 + 63) >> 6) << 6);
-          withPad.set(bytes); withPad[bytes.length] = 0x80;
-          const dv = new DataView(withPad.buffer);
-          dv.setUint32(withPad.length - 4, ml >>> 0); dv.setUint32(withPad.length - 8, Math.floor(ml / 2 ** 32));
-          let h0 = 0x67452301, h1 = 0xEFCDAB89, h2 = 0x98BADCFE, h3 = 0x10325476, h4 = 0xC3D2E1F0;
-          const w = new Uint32Array(80);
-          for (let i = 0; i < withPad.length; i += 64) {
-            for (let t = 0; t < 16; t++) w[t] = dv.getUint32(i + t * 4);
-            for (let t = 16; t < 80; t++) w[t] = rotl(w[t - 3] ^ w[t - 8] ^ w[t - 14] ^ w[t - 16], 1);
-            let a = h0, b = h1, c = h2, d = h3, e = h4;
-            for (let t = 0; t < 80; t++) {
-              const f = t < 20 ? (b & c) | (~b & d) : t < 40 ? b ^ c ^ d : t < 60 ? (b & c) | (b & d) | (c & d) : b ^ c ^ d;
-              const k = t < 20 ? 0x5A827999 : t < 40 ? 0x6ED9EBA1 : t < 60 ? 0x8F1BBCDC : 0xCA62C1D6;
-              const tmp = (rotl(a, 5) + f + e + k + w[t]) >>> 0;
-              e = d; d = c; c = rotl(b, 30) >>> 0; b = a; a = tmp;
-            }
-            h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0; h4 = (h4 + e) >>> 0;
-          }
-          const out = new Uint8Array(20); const o = new DataView(out.buffer);
-          [h0, h1, h2, h3, h4].forEach((h, i) => o.setUint32(i * 4, h));
-          return out;
-        };
-        KT.hmac = (key, msg) => {
-          if (key.length > 64) key = KT.sha1(key);
-          const k = new Uint8Array(64); k.set(key);
-          const ip = k.map(b => b ^ 0x36), op = k.map(b => b ^ 0x5c);
-          const inner = new Uint8Array(64 + msg.length); inner.set(ip); inner.set(msg, 64);
-          const ih = KT.sha1(inner);
-          const outer = new Uint8Array(84); outer.set(op); outer.set(ih, 64);
-          return KT.sha1(outer);
-        };
-        KT.base32 = s => {
-          const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-          const clean = String(s || '').toUpperCase().replace(/[\s=-]/g, '');
-          let bits = 0, val = 0; const out = [];
-          for (const ch of clean) {
-            const i = A.indexOf(ch); if (i < 0) throw new Error('Nieprawidłowy sekret (Base32)');
-            val = (val << 5) | i; bits += 5;
-            if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; }
-          }
-          return new Uint8Array(out);
-        };
-        KT.totp = (secret, period, digits, nowMs) => {
-          const counter = Math.floor((nowMs ?? Date.now()) / 1000 / period);
-          const msg = new Uint8Array(8); const dv = new DataView(msg.buffer);
-          dv.setUint32(0, Math.floor(counter / 2 ** 32)); dv.setUint32(4, counter >>> 0);
-          const h = KT.hmac(KT.base32(secret), msg);
-          const off = h[19] & 15;
-          const bin = ((h[off] & 127) << 24) | (h[off + 1] << 16) | (h[off + 2] << 8) | h[off + 3];
-          return String(bin % 10 ** digits).padStart(digits, '0');
-        };
-
         const root = this.shadowRoot;
         const uid = 'k' + Math.random().toString(36).slice(2, 8);
         const KEY = 'karty_lojalnosciowe';
@@ -89,7 +33,7 @@ cards:
         // Uzupełnij własnymi telefonami, np. { 'SM-A576B': 'mobile_app_moj_telefon' }
         // (model z User-Agent aplikacji HA -> usługa notify). Pusta mapa = bez rozjaśniania ekranu.
         const DEV = {};
-        const TYPES = { auto: 'Kod kreskowy', ean13: 'EAN-13', ean8: 'EAN-8', code128: 'Code 128', qr: 'Kod QR', totp: 'Kod dynamiczny', app: 'Otwórz aplikację' };
+        const TYPES = { auto: 'Kod kreskowy', ean13: 'EAN-13', ean8: 'EAN-8', code128: 'Code 128', qr: 'Kod QR', app: 'Kod dynamiczny – otwórz aplikację' };
         const COLORS = ['#00843d', '#e30613', '#0050aa', '#ffcc00', '#f39200', '#7b2d8e', '#1d1d1b', '#00a0e3'];
         const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const logoKey = n => String(n || '').replace(/ł/g, 'l').replace(/Ł/g, 'L').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
@@ -200,49 +144,28 @@ cards:
         #karty-full .nm { font-size: 20px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         #karty-full .body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 16px; }
         #karty-full .num { font: 600 24px/1.2 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .14em; text-align: center; word-break: break-all; }
-        #karty-full .tm { width: min(80vw, 420px); text-align: center; font-size: 14px; color: #444; }
-        #karty-full .tm .track { height: 8px; border-radius: 4px; background: #e5e5e5; overflow: hidden; margin-top: 6px; }
-        #karty-full .tm .fill { height: 100%; background: ${c.color}; transition: width 1s linear; }
         #karty-full .note { margin: 0 12px 12px; margin-bottom: max(12px, env(safe-area-inset-bottom)); padding: 12px 16px; border-radius: 12px;
           background: #f3f3f3; border-left: 5px solid ${c.color}; color: #222; font-size: 17px; line-height: 1.35; white-space: normal; }
         #karty-full .err { color: #c62828; text-align: center; padding: 24px; }
         </style>
         <div class="bar"><button class="back">← Wróć</button><div class="nm">${esc(c.name)}</div></div>
-        <div class="body"><div class="code"></div><div class="num"></div><div class="tm"></div></div>
+        <div class="body"><div class="code"></div><div class="num"></div></div>
         ${c.note ? `<div class="note">${esc(c.note).replace(/\n/g, '<br>')}</div>` : ''}`;
           document.body.appendChild(ov);
-          const box = ov.querySelector('.code'), num = ov.querySelector('.num'), tm = ov.querySelector('.tm');
-          let timer = null, lock = null, step = null;
+          const box = ov.querySelector('.code'), num = ov.querySelector('.num');
+          let lock = null;
           const paint = () => {
             try {
-              if (c.type === 'totp') {
-                const t = c.totp || {};
-                const period = +t.period || 120, digits = +t.digits || 6;
-                const now = Date.now(), s = Math.floor(now / 1000 / period);
-                if (s !== step) {
-                  step = s;
-                  const code = KT.totp(t.secret, period, digits, now);
-                  const content = (t.template || '{kod}').split('{kod}').join(code);
-                  renderCode(box, content, t.fmt || 'qr');
-                  num.textContent = (t.template || '{kod}') === '{kod}' ? code : '';
-                }
-                const left = Math.ceil(period - (now / 1000) % period);
-                tm.innerHTML = `Nowy kod za ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}
-                  <div class="track"><div class="fill" style="width:${(left / period) * 100}%"></div></div>`;
-              } else {
-                renderCode(box, c.code, c.type);
-                num.textContent = c.type === 'qr' && c.code.length > 24 ? '' : c.code;
-              }
+              renderCode(box, c.code, c.type);
+              num.textContent = c.type === 'qr' && c.code.length > 24 ? '' : c.code;
             } catch (e) {
               box.innerHTML = `<div class="err">Nie da się wygenerować kodu: ${esc(e.message || e)}</div>`;
             }
           };
           paint();
-          if (c.type === 'totp') timer = setInterval(paint, 1000);
           const onKey = e => { if (e.key === 'Escape' && !document.fullscreenElement) close(); };
           const onPop = () => close(true);
           const close = fromPop => {
-            clearInterval(timer);
             window.removeEventListener('popstate', onPop);
             document.removeEventListener('keydown', onKey, true);
             try { lock && lock.release(); } catch (e) {}
@@ -262,9 +185,9 @@ cards:
 
         const openForm = async (cards, idx) => {
           document.getElementById('karty-form')?.remove();
-          const c = idx == null ? { name: '', code: '', type: 'auto', color: COLORS[0], totp: { period: 120, digits: 6, template: '{kod}', fmt: 'qr' } }
+          const c = idx == null ? { name: '', code: '', type: 'auto', color: COLORS[0] }
             : JSON.parse(JSON.stringify(cards[idx]));
-          c.totp = Object.assign({ period: 120, digits: 6, template: '{kod}', fmt: 'qr', secret: '' }, c.totp || {});
+          if (c.type === 'totp') { c.type = 'app'; delete c.totp; } // dawne karty z sekretem TOTP
           const canScan = 'BarcodeDetector' in window && !!navigator.mediaDevices?.getUserMedia && window.isSecureContext;
           const f = document.createElement('div');
           f.id = 'karty-form';
@@ -290,15 +213,15 @@ cards:
         #karty-form .scan { width: 100%; margin-top: 8px; border: 1px dashed var(--primary-color); }
         #karty-form video { width: 100%; border-radius: 10px; margin-top: 8px; background: #000; }
         #karty-form .photo img { width: 100%; aspect-ratio: 1.586; object-fit: cover; border-radius: 12px; display: block; margin-bottom: 8px; }
-        #karty-form .totp, #karty-form .app { display: none; } #karty-form.is-totp .totp, #karty-form.is-app .app { display: block; }
-        #karty-form.is-totp .static, #karty-form.is-app .static { display: none; }
+        #karty-form .app { display: none; } #karty-form.is-app .app { display: block; }
+        #karty-form.is-app .static { display: none; }
         </style>
         <div class="box">
           <h2>${idx == null ? 'Nowa karta' : 'Edytuj kartę'}</h2>
           <label>Nazwa sklepu</label><input name="name" value="${esc(c.name)}" placeholder="np. Biedronka">
           <div class="hint">Masz dwie karty jednego sklepu? Dopisz po myślniku, np. <b>Makro – firmowa</b> (logo zostaje Makro).</div>
           <label>Rodzaj kodu</label><select name="type">${Object.entries(TYPES).map(([k, v]) =>
-            `<option value="${k}" ${c.type === k ? 'selected' : ''}>${v}${k === 'auto' ? ' (rozpoznaj automatycznie)' : k === 'totp' ? ' (zmienia się co kilka minut)' : k === 'app' ? ' (np. Żappka – kod pokaże aplikacja sklepu)' : ''}</option>`).join('')}</select>
+            `<option value="${k}" ${c.type === k ? 'selected' : ''}>${v}${k === 'auto' ? ' (rozpoznaj automatycznie)' : k === 'app' ? ' (kod zmienia się, np. Żappka – pokaże go aplikacja sklepu)' : ''}</option>`).join('')}</select>
           <div class="static">
             <label>Numer karty / zawartość kodu</label><input name="code" value="${esc(c.code)}" inputmode="text" placeholder="np. 2900123456789">
             ${canScan ? '<button class="b scan" data-act="scan">📷 Zeskanuj kod z karty aparatem</button><div class="cam"></div>' : ''}
@@ -306,18 +229,7 @@ cards:
           <div class="app">
             <label>Aplikacja sklepu (nazwa pakietu Androida)</label><input name="app" value="${esc(c.app || '')}" placeholder="np. pl.zabka.apb2c" autocomplete="off">
             <div class="row" style="margin-top:8px"><button class="b" data-act="zappka" style="border:1px dashed var(--primary-color)">Żappka</button></div>
-            <div class="hint">Nazwę pakietu znajdziesz w adresie aplikacji w Sklepie Play: …/details?id=<b>nazwa.pakietu</b>. Działa w aplikacji Home Assistant na Androidzie.</div>
-          </div>
-          <div class="totp">
-            <label>Sekret (Base32)</label><input name="secret" value="${esc(c.totp.secret)}" placeholder="np. JBSWY3DPEHPK3PXP" autocomplete="off">
-            <div class="row">
-              <div style="flex:1"><label>Zmiana co (s)</label><input name="period" type="number" min="10" value="${esc(c.totp.period)}"></div>
-              <div style="flex:1"><label>Cyfry</label><input name="digits" type="number" min="4" max="10" value="${esc(c.totp.digits)}"></div>
-              <div style="flex:1"><label>Format</label><select name="fmt"><option value="qr" ${c.totp.fmt === 'qr' ? 'selected' : ''}>QR</option>
-                <option value="code128" ${c.totp.fmt === 'code128' ? 'selected' : ''}>Kreskowy</option></select></div>
-            </div>
-            <label>Zawartość kodu</label><input name="template" value="${esc(c.totp.template)}">
-            <div class="hint">{kod} zostanie zastąpione aktualnym kodem jednorazowym, np. <code>NUMER-KARTY-{kod}</code>.</div>
+            <div class="hint">Nazwę pakietu znajdziesz w adresie aplikacji w Sklepie Play: …/details?id=<b>nazwa.pakietu</b>. Karty z kodem zmieniającym się co kilka minut (TOTP) otwierają aplikację sklepu – tam jest aktualny kod. Działa w aplikacji Home Assistant na Androidzie.</div>
           </div>
           <label class="row" style="gap:10px;color:var(--primary-text-color);font-size:14px;cursor:pointer">
             <input name="uselogo" type="checkbox" ${c.nologo ? '' : 'checked'} style="width:20px;height:20px;flex:none"> Pokaż logo sklepu (pobierane automatycznie z internetu)</label>
@@ -356,7 +268,7 @@ cards:
             try { img = await cardPhoto(file); showPhoto(); } catch (err) { alert(err.message); }
             $('file').value = '';
           });
-          const sync = () => { f.classList.toggle('is-totp', $('type').value === 'totp'); f.classList.toggle('is-app', $('type').value === 'app'); };
+          const sync = () => f.classList.toggle('is-app', $('type').value === 'app');
           sync();
           $('type').addEventListener('change', sync);
           let stream = null;
@@ -397,13 +309,10 @@ cards:
             }
             if (act === 'save') {
               const n = { name: $('name').value.trim(), type: $('type').value, color: $('color').value, code: $('code').value.trim(),
-                note: $('note').value.trim(), domain: $('domain').value.trim().replace(/^https?:\/\//, '').split('/')[0], nologo: !$('uselogo').checked, app: $('app').value.trim(), totp: { secret: $('secret').value.trim(), period: +$('period').value || 120, digits: +$('digits').value || 6,
-                  template: $('template').value || '{kod}', fmt: $('fmt').value } };
+                note: $('note').value.trim(), domain: $('domain').value.trim().replace(/^https?:\/\//, '').split('/')[0], nologo: !$('uselogo').checked, app: $('app').value.trim() };
               if (!n.name) return alert('Podaj nazwę sklepu.');
               if (n.type === 'app') { if (!/^[a-zA-Z][\w]*(\.[a-zA-Z][\w]*)+$/.test(n.app)) return alert('Podaj nazwę pakietu aplikacji, np. pl.zabka.apb2c'); }
-              else if (n.type === 'totp') { try { KT.totp(n.totp.secret, n.totp.period, n.totp.digits); } catch (err) { return alert(err.message); } }
               else if (!n.code) return alert('Podaj numer karty albo zeskanuj kod.');
-              if (n.type !== 'totp') delete n.totp;
               if (n.type !== 'app') delete n.app; else delete n.code;
               if (img) n.img = img;
               if (!n.note) delete n.note;
@@ -445,7 +354,7 @@ cards:
                   : logoOf(c) ? `background:#fff;color:#fff;--kc:${esc(c.color)}` : `background:${esc(c.color)};color:${textOn(c.color)}`}">
                 ${!c.img && logoOf(c) ? `<img class="logo" src="${logoOf(c)}" alt="" loading="lazy">` : ''}
                 <div class="nm">${esc(splitName(c.name)[0])}</div>
-                <div class="ty">${splitName(c.name)[1] ? `<b>${esc(splitName(c.name)[1])}</b>` : c.type === 'app' ? 'Otwiera aplikację' : c.type === 'totp' ? `Kod dynamiczny · co ${Math.round((c.totp?.period || 120) / 60 * 10) / 10} min` : TYPES[c.type] || ''}</div>
+                <div class="ty">${splitName(c.name)[1] ? `<b>${esc(splitName(c.name)[1])}</b>` : c.type === 'app' || c.type === 'totp' ? 'Kod dynamiczny · otwiera aplikację' : TYPES[c.type] || ''}</div>
                 ${c.note ? '<div class="nt" title="Ma komentarz">💬</div>' : ''}
                 ${adm ? `<button class="ed" data-e="${i}" title="Edytuj">✎</button>` : ''}</div>`).join('')}</div>`;
           if (adm) onTap(el.querySelector('.add'), () => openForm(cards, null));
@@ -453,7 +362,7 @@ cards:
             const ed = e.target.closest && e.target.closest('.ed');
             if (ed) return openForm(cards, +ed.dataset.e);
             const c = cards[+t.dataset.i];
-            if (c.type === 'app') return openApp(c);
+            if (c.type === 'app' || c.type === 'totp') return openApp(c);
             openFull(c);
           }));
         };
