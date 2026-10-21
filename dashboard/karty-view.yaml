@@ -86,8 +86,9 @@ cards:
         const KEY = 'karty_lojalnosciowe';
         const LIB = '/local/karty/';
         // telefony z aplikacją HA: model (z User-Agent aplikacji) -> usługa notify (sterowanie jasnością)
-        const DEV = { 'SM-F926B': 'mobile_app_cebolfold', 'SM-F766B': 'mobile_app_kamila_flip7', 'SM-A576B': 'mobile_app_telefon_dziadek',
-          'SM-A127F': 'mobile_app_sm_a127f_tadeusz', 'SM-P619': 'mobile_app_sm_p619' };
+        // Uzupełnij własnymi telefonami, np. { 'SM-A576B': 'mobile_app_moj_telefon' }
+        // (model z User-Agent aplikacji HA -> usługa notify). Pusta mapa = bez rozjaśniania ekranu.
+        const DEV = {};
         const TYPES = { auto: 'Kod kreskowy', ean13: 'EAN-13', ean8: 'EAN-8', code128: 'Code 128', qr: 'Kod QR', totp: 'Kod dynamiczny', app: 'Otwórz aplikację' };
         const COLORS = ['#00843d', '#e30613', '#0050aa', '#ffcc00', '#f39200', '#7b2d8e', '#1d1d1b', '#00a0e3'];
         const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

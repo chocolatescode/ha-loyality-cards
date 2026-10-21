@@ -1,7 +1,7 @@
 """Wspólny magazyn kart lojalnościowych.
 
 Frontend system_data pozwala zapisywać tylko adminom, a karty mają móc dodawać
-wszyscy domownicy (również Dziadek, który nie jest adminem). Ta integracja
+wszyscy domownicy (również ci, którzy nie są adminami). Ta integracja
 trzyma karty w .storage/karty i udostępnia komendy websocket karty/get
 i karty/set dla każdego zalogowanego użytkownika.
 """
