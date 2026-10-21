@@ -1,0 +1,10 @@
+{
+  "domain": "karty",
+  "name": "Karty lojalnościowe",
+  "codeowners": [],
+  "dependencies": ["websocket_api"],
+  "documentation": "https://www.home-assistant.io/",
+  "iot_class": "local_push",
+  "requirements": [],
+  "version": "1.0.0"
+}

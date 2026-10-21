@@ -1,0 +1,17 @@
+# Karty lojalnościowe (widok Karty): automatyczne logo sklepów.
+# Skrypt /config/karty/logo.py pobiera logo dla kart wszystkich użytkowników (Wikidata -> strona sklepu)
+# do /config/www/karty/logos/. Panel kart odświeża ten sensor po zapisaniu karty.
+command_line:
+  - sensor:
+      name: Karty loga
+      unique_id: karty_loga
+      icon: mdi:image-multiple-outline
+      command: "python3 /config/karty/logo.py"
+      command_timeout: 180
+      scan_interval: 3600
+      value_template: "{{ value_json.count }}"
+      json_attributes:
+        - logos
+
+# Wspólny magazyn kart (custom_components/karty): komendy websocket karty/get|set|subscribe dla wszystkich użytkowników.
+karty:

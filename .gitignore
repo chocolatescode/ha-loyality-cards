@@ -1,0 +1,3 @@
+__pycache__/
+www/karty/logos/*
+!www/karty/logos/.gitkeep
